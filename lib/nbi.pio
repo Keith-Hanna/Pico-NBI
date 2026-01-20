@@ -1,0 +1,80 @@
+; This PIO code is based on the "pio_i2c_bus_scan" example in 
+; the Pico SDK set of PIO examples. This example is very fully described in both
+; the RP2350 Datasheet and the Raspberry Pi Pico C/C++ SDK.
+
+
+; Define a name ("transfer") for this PIO program. In the C program variants of this 
+; name are used to refer to this particular PIO program.
+.program transfer
+
+; Allocate 1 bit for side set operations, and a further bit for the optionality.
+; This leaves 3 bits remaining for specifying up to 7 extra delay cycles.
+;
+; The side-set bit will operate on the pin direction rather than the pin value.
+; (Elsewhere, this side-set pin will be associated with the SCL bus.)
+.side_set 1 opt pindirs
+
+; Pull a 32-bit word (when available) from the TX-FIFO and load it into the OSR.
+; Only the most significant half of the word will be used.
+; This word will hold (left-justified) a Record, consisting of the 
+; following fields:
+;       - a START bit, 
+;       - an 8-bit byte
+;       - an ACK_NACK bit
+;       - a REPLY bit    (set if a RX FIFO response should be given)              
+;       - a STOP bit
+start:
+    pull
+
+    ; Unpack the START bit
+    out x 1
+
+    ; If the START bit is set, then emit an I2C Start sequence
+    jmp !x skip_start    ; Jump if X is zero
+     
+    ; Emit the I2C  START sequence   (assuming no prior conditions)
+    set pindirs 1   [7]     ; SDA high  -- Establish necessary pre-condition
+    nop side 1      [7]     ; SCL high  -- Establish necessary pre-condition
+    set pindirs 0   [7]     ; SDA low   -- This is the defining transition for START
+    nop side 0      [7]     ; SCL low   -- Prepare for next transfer
+
+skip_start:
+    ; Iterate the following loop 9 times (for an 8 bit byte and 1 bit ACK/NAK)
+    set x (9 - 1)
+
+again:
+    out pindirs   1 [7]     ; Shift the msb of the OSR to SDA
+    nop side 1      [2]     ; Allow SCL to float high
+    wait 1 pin 1    [4]     ; Wait until SCL is 1  (to allow for clock stretching)
+    in pins 1       [7]     ; Shift SDA (1 bit) into the ISR  (Left shift, so it feeds into LSB)
+    jmp x-- again side 0 [7]
+                            ; Pull SCL low and, if X > 0, decrement X and loop back to l1
+
+    ; Assertion: 9 bits have now been shifted out from the OSR and 9 bits have been
+    ; shifted into the ISR. 
+
+    ; Unpack the REPLY bit    
+    out x 1  
+
+    ; If the REPLY bit is false, then skip generating a reply to the command 
+    jmp !x skip_reply                      
+    
+    ; Push the OSR to the RX-FIFO, (blocking until space available)
+    push 
+
+skip_reply:
+    ; Unpack the STOP bit
+    out x 1    
+    ; If the stop bit is set, then emit a STOP sequence, otherwise loop back
+    ; to the start
+    jmp !x  start               ; Jump if x is zero
+    
+    set pindirs 0    [7]        ; Pull down SDA    
+    nop              [7]
+    nop side 1       [7]        ; Allow SCL to float up
+    nop              [7]
+    set pindirs 1    [7]
+
+    ; Loop back to the start, waiting for more input
+
+
