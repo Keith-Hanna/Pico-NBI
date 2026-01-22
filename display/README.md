@@ -56,10 +56,9 @@ After the benchmark task is complete, it displays the elapsed time taken by the 
 
 ## Performance
 
-This video [*NOT* yet included] shows part of a typical run of the program:
+This video shows a typical run of the program:
 
-[Video]
-
+https://github.com/user-attachments/assets/4ee6c9d8-8bc2-4731-82b2-8f35ad9d13bd
 
 As this trace shows, each interrupt takes about 700 ns to handle and (at the `FAST` speed) these interrupts are about 25 us apart.
 
