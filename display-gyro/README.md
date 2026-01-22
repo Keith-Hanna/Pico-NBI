@@ -64,11 +64,12 @@ Finally, the estimate-$\pi$ benchmark program is started; it runs for a million 
 ### Performance
 The time taken to run the benchmark task, with both the SSD1306 and the MPU6050 being continuously accessed at their maximal rate is about 31.9 s.  This compares with the time taken, 25.1 s, to run the benchmark task by itself.
 
-These videos [*NOT* yet included] demonstrate the program in action both with and without the font-size jumper present:
+This video demonstrates a typical run of the program:
 
-[Video clips to be inserted]
+https://github.com/user-attachments/assets/1f082bc4-66ca-4b62-bd0a-808dac6ebe03
 
-Due to the rapid rate at which the gyro is read, the program manages to maintain the orientation accurately even in the presence of quite rapid rotational transients.
+And this video shows a typical run with the jumper in place (to select the small font):
 
+https://github.com/user-attachments/assets/21680b36-1ba6-4d03-9566-ecf26b6cd038
 
-
+The rapid rate at which the gyro is read allows the orientation to be accurately maintained.
